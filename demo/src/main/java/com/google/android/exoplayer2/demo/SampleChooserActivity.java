@@ -386,6 +386,7 @@ public class SampleChooserActivity extends Activity {
     public Intent buildIntent(Context context) {
       Intent intent = new Intent(context, PlayerActivity.class);
       intent.putExtra(PlayerActivity.PREFER_EXTENSION_DECODERS, preferExtensionDecoders);
+      intent.putExtra(PlayerActivity.VIDEO_TITLE_EXTRA, name);
       if (drmSchemeUuid != null) {
         intent.putExtra(PlayerActivity.DRM_SCHEME_UUID_EXTRA, drmSchemeUuid.toString());
         intent.putExtra(PlayerActivity.DRM_LICENSE_URL, drmLicenseUrl);
