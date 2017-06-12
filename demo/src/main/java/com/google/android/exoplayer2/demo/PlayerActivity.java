@@ -18,10 +18,12 @@ package com.google.android.exoplayer2.demo;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Point;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -66,6 +68,10 @@ import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.google.android.exoplayer2.util.Util;
+import com.mux.stats.sdk.core.model.CustomerPlayerData;
+import com.mux.stats.sdk.core.model.CustomerVideoData;
+import com.mux.stats.sdk.muxstats.MuxStats;
+
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
@@ -79,6 +85,7 @@ import java.util.UUID;
 public class PlayerActivity extends Activity implements OnClickListener, ExoPlayer.EventListener,
     PlaybackControlView.VisibilityListener {
 
+  public static final String VIDEO_TITLE = "video_title";
   public static final String DRM_SCHEME_UUID_EXTRA = "drm_scheme_uuid";
   public static final String DRM_LICENSE_URL = "drm_license_url";
   public static final String DRM_KEY_REQUEST_PROPERTIES = "drm_key_request_properties";
@@ -94,6 +101,8 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
 
   private static final DefaultBandwidthMeter BANDWIDTH_METER = new DefaultBandwidthMeter();
   private static final CookieManager DEFAULT_COOKIE_MANAGER;
+  private static final String TAG = "PlayerActivity";
+
   static {
     DEFAULT_COOKIE_MANAGER = new CookieManager();
     DEFAULT_COOKIE_MANAGER.setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER);
@@ -118,6 +127,8 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
   private boolean isTimelineStatic;
   private int playerWindow;
   private long playerPosition;
+
+  private MuxStats muxStats;
 
   // Activity lifecycle
 
@@ -274,11 +285,21 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
           drmSessionManager, extensionRendererMode);
       player.addListener(this);
 
+      CustomerPlayerData customerPlayerData = new CustomerPlayerData();
+      customerPlayerData.setPropertyKey("YOUR_PROPERTY_KEY");
+      CustomerVideoData customerVideoData = new CustomerVideoData();
+      customerVideoData.setVideoTitle(intent.getStringExtra(VIDEO_TITLE));
+      muxStats = new MuxStats(player, "sample-player", customerPlayerData, customerVideoData);
+      Point size = new Point();
+      getWindowManager().getDefaultDisplay().getSize(size);
+      muxStats.setScreenSize(size.x, size.y);
+      muxStats.setPlayerView(simpleExoPlayerView.getVideoSurfaceView());
+
       eventLogger = new EventLogger(trackSelector);
       player.addListener(eventLogger);
-      player.setAudioDebugListener(eventLogger);
-      player.setVideoDebugListener(eventLogger);
-      player.setId3Output(eventLogger);
+      player.setAudioDebugListener(muxStats.getAudioRendererEventListener(eventLogger));
+      player.setVideoDebugListener(muxStats.getVideoRendererEventListener(eventLogger));
+      player.setMetadataOutput(muxStats.getMetadataRendererOutput(eventLogger));
 
       simpleExoPlayerView.setPlayer(player);
       if (isTimelineStatic) {
@@ -325,6 +346,7 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
       MediaSource mediaSource = mediaSources.length == 1 ? mediaSources[0]
           : new ConcatenatingMediaSource(mediaSources);
       player.prepare(mediaSource, !isTimelineStatic, !isTimelineStatic);
+
       playerNeedsSource = false;
       updateButtonVisibilities();
     }
@@ -336,15 +358,15 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
     switch (type) {
       case C.TYPE_SS:
         return new SsMediaSource(uri, buildDataSourceFactory(false),
-            new DefaultSsChunkSource.Factory(mediaDataSourceFactory), mainHandler, eventLogger);
+            new DefaultSsChunkSource.Factory(mediaDataSourceFactory), mainHandler, muxStats.getAdaptiveMediaSourceEventListener(eventLogger));
       case C.TYPE_DASH:
         return new DashMediaSource(uri, buildDataSourceFactory(false),
-            new DefaultDashChunkSource.Factory(mediaDataSourceFactory), mainHandler, eventLogger);
+            new DefaultDashChunkSource.Factory(mediaDataSourceFactory), mainHandler, muxStats.getAdaptiveMediaSourceEventListener(eventLogger));
       case C.TYPE_HLS:
-        return new HlsMediaSource(uri, mediaDataSourceFactory, mainHandler, eventLogger);
+        return new HlsMediaSource(uri, mediaDataSourceFactory, mainHandler, muxStats.getAdaptiveMediaSourceEventListener(eventLogger));
       case C.TYPE_OTHER:
         return new ExtractorMediaSource(uri, mediaDataSourceFactory, new DefaultExtractorsFactory(),
-            mainHandler, eventLogger);
+            mainHandler, muxStats.getExtractorMediaSourceEventListener(eventLogger));
       default: {
         throw new IllegalStateException("Unsupported type: " + type);
       }
@@ -359,7 +381,7 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
     HttpMediaDrmCallback drmCallback = new HttpMediaDrmCallback(licenseUrl,
         buildHttpDataSourceFactory(false), keyRequestProperties);
     return new StreamingDrmSessionManager<>(uuid,
-        FrameworkMediaDrm.newInstance(uuid), drmCallback, null, mainHandler, eventLogger);
+        FrameworkMediaDrm.newInstance(uuid), drmCallback, null, mainHandler, muxStats.getStreamingDrmSessionManagerEventListener(eventLogger));
   }
 
   private void releasePlayer() {
@@ -378,6 +400,9 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
       trackSelector = null;
       trackSelectionHelper = null;
       eventLogger = null;
+
+      muxStats.release();
+      muxStats = null;
     }
   }
 
