@@ -392,6 +392,7 @@ public class SampleChooserActivity extends Activity {
         intent.putExtra(PlayerActivity.DRM_SCHEME_UUID_EXTRA, drmSchemeUuid.toString());
         intent.putExtra(PlayerActivity.DRM_LICENSE_URL, drmLicenseUrl);
         intent.putExtra(PlayerActivity.DRM_KEY_REQUEST_PROPERTIES, drmKeyRequestProperties);
+        intent.putExtra(PlayerActivity.VIDEO_TITLE_EXTRA, name);
       }
       return intent;
     }
