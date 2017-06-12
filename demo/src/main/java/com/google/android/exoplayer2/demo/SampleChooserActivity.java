@@ -262,13 +262,11 @@ public class SampleChooserActivity extends Activity {
     }
 
     private UUID getDrmUuid(String typeString) throws ParserException {
-      switch (Util.toLowerInvariant(typeString)) {
+      switch (typeString.toLowerCase()) {
         case "widevine":
           return C.WIDEVINE_UUID;
         case "playready":
           return C.PLAYREADY_UUID;
-        case "cenc":
-          return C.CLEARKEY_UUID;
         default:
           try {
             return UUID.fromString(typeString);
@@ -388,6 +386,7 @@ public class SampleChooserActivity extends Activity {
     public Intent buildIntent(Context context) {
       Intent intent = new Intent(context, PlayerActivity.class);
       intent.putExtra(PlayerActivity.PREFER_EXTENSION_DECODERS, preferExtensionDecoders);
+      intent.putExtra(PlayerActivity.VIDEO_TITLE_EXTRA, name);
       if (drmSchemeUuid != null) {
         intent.putExtra(PlayerActivity.DRM_SCHEME_UUID_EXTRA, drmSchemeUuid.toString());
         intent.putExtra(PlayerActivity.DRM_LICENSE_URL, drmLicenseUrl);

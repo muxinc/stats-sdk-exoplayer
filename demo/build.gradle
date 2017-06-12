@@ -24,28 +24,29 @@ android {
 
     buildTypes {
         release {
-            shrinkResources true
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt')
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
         debug {
             jniDebuggable = true
+            debuggable = true
         }
     }
 
     lintOptions {
-        // The demo app does not have translations.
-        disable 'MissingTranslation'
+        abortOnError false
     }
 
     productFlavors {
         noExtensions
         withExtensions
     }
+
 }
 
 dependencies {
     compile project(':library')
+    compile project(':mux')
     withExtensionsCompile project(path: ':extension-ffmpeg')
     withExtensionsCompile project(path: ':extension-flac')
     withExtensionsCompile project(path: ':extension-opus')

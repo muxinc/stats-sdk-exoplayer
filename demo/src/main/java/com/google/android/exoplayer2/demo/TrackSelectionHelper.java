@@ -51,7 +51,7 @@ import java.util.Locale;
   private static final TrackSelection.Factory RANDOM_FACTORY = new RandomTrackSelection.Factory();
 
   private final MappingTrackSelector selector;
-  private final TrackSelection.Factory adaptiveTrackSelectionFactory;
+  private final TrackSelection.Factory adaptiveVideoTrackSelectionFactory;
 
   private MappedTrackInfo trackInfo;
   private int rendererIndex;
@@ -67,13 +67,13 @@ import java.util.Locale;
 
   /**
    * @param selector The track selector.
-   * @param adaptiveTrackSelectionFactory A factory for adaptive {@link TrackSelection}s, or null
-   *     if the selection helper should not support adaptive tracks.
+   * @param adaptiveVideoTrackSelectionFactory A factory for adaptive video {@link TrackSelection}s,
+   *     or null if the selection helper should not support adaptive video.
    */
   public TrackSelectionHelper(MappingTrackSelector selector,
-      TrackSelection.Factory adaptiveTrackSelectionFactory) {
+      TrackSelection.Factory adaptiveVideoTrackSelectionFactory) {
     this.selector = selector;
-    this.adaptiveTrackSelectionFactory = adaptiveTrackSelectionFactory;
+    this.adaptiveVideoTrackSelectionFactory = adaptiveVideoTrackSelectionFactory;
   }
 
   /**
@@ -92,7 +92,7 @@ import java.util.Locale;
     trackGroups = trackInfo.getTrackGroups(rendererIndex);
     trackGroupsAdaptive = new boolean[trackGroups.length];
     for (int i = 0; i < trackGroups.length; i++) {
-      trackGroupsAdaptive[i] = adaptiveTrackSelectionFactory != null
+      trackGroupsAdaptive[i] = adaptiveVideoTrackSelectionFactory != null
           && trackInfo.getAdaptiveSupport(rendererIndex, i, false)
               != RendererCapabilities.ADAPTIVE_NOT_SUPPORTED
           && trackGroups.get(i).length > 1;
@@ -271,7 +271,7 @@ import java.util.Locale;
 
   private void setOverride(int group, int[] tracks, boolean enableRandomAdaptation) {
     TrackSelection.Factory factory = tracks.length == 1 ? FIXED_FACTORY
-        : (enableRandomAdaptation ? RANDOM_FACTORY : adaptiveTrackSelectionFactory);
+        : (enableRandomAdaptation ? RANDOM_FACTORY : adaptiveVideoTrackSelectionFactory);
     override = new SelectionOverride(factory, group, tracks);
   }
 
@@ -301,18 +301,15 @@ import java.util.Locale;
   private static String buildTrackName(Format format) {
     String trackName;
     if (MimeTypes.isVideo(format.sampleMimeType)) {
-      trackName = joinWithSeparator(joinWithSeparator(joinWithSeparator(
-          buildResolutionString(format), buildBitrateString(format)), buildTrackIdString(format)),
-          buildSampleMimeTypeString(format));
+      trackName = joinWithSeparator(joinWithSeparator(buildResolutionString(format),
+          buildBitrateString(format)), buildTrackIdString(format));
     } else if (MimeTypes.isAudio(format.sampleMimeType)) {
-      trackName = joinWithSeparator(joinWithSeparator(joinWithSeparator(joinWithSeparator(
-          buildLanguageString(format), buildAudioPropertyString(format)),
-          buildBitrateString(format)), buildTrackIdString(format)),
-          buildSampleMimeTypeString(format));
-    } else {
       trackName = joinWithSeparator(joinWithSeparator(joinWithSeparator(buildLanguageString(format),
-          buildBitrateString(format)), buildTrackIdString(format)),
-          buildSampleMimeTypeString(format));
+          buildAudioPropertyString(format)), buildBitrateString(format)),
+          buildTrackIdString(format));
+    } else {
+      trackName = joinWithSeparator(joinWithSeparator(buildLanguageString(format),
+          buildBitrateString(format)), buildTrackIdString(format));
     }
     return trackName.length() == 0 ? "unknown" : trackName;
   }
@@ -343,10 +340,6 @@ import java.util.Locale;
 
   private static String buildTrackIdString(Format format) {
     return format.id == null ? "" : ("id:" + format.id);
-  }
-
-  private static String buildSampleMimeTypeString(Format format) {
-    return format.sampleMimeType == null ? "" : format.sampleMimeType;
   }
 
 }
