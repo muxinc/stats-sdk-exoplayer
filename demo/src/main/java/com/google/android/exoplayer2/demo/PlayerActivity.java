@@ -18,6 +18,7 @@ package com.google.android.exoplayer2.demo;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Point;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -67,6 +68,10 @@ import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.google.android.exoplayer2.util.Util;
+import com.mux.stats.sdk.core.model.CustomerPlayerData;
+import com.mux.stats.sdk.core.model.CustomerVideoData;
+import com.mux.stats.sdk.muxstats.MuxStats;
+
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
@@ -92,6 +97,7 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
       "com.google.android.exoplayer.demo.action.VIEW_LIST";
   public static final String URI_LIST_EXTRA = "uri_list";
   public static final String EXTENSION_LIST_EXTRA = "extension_list";
+  public static final String VIDEO_TITLE_EXTRA = "video_title";
 
   private static final DefaultBandwidthMeter BANDWIDTH_METER = new DefaultBandwidthMeter();
   private static final CookieManager DEFAULT_COOKIE_MANAGER;
@@ -119,6 +125,8 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
   private boolean isTimelineStatic;
   private int playerWindow;
   private long playerPosition;
+
+  private MuxStats muxStats;
 
   // Activity lifecycle
 
@@ -258,10 +266,22 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
       trackSelectionHelper = new TrackSelectionHelper(trackSelector, videoTrackSelectionFactory);
       player = ExoPlayerFactory.newSimpleInstance(this, trackSelector, new DefaultLoadControl(),
           drmSessionManager, preferExtensionDecoders);
+
+      CustomerPlayerData customerPlayerData = new CustomerPlayerData();
+      customerPlayerData.setPropertyKey("YOUR_PROPERTY_KEY");
+      CustomerVideoData customerVideoData = new CustomerVideoData();
+      customerVideoData.setVideoTitle(intent.getStringExtra(VIDEO_TITLE_EXTRA));
+      muxStats = new MuxStats(player, "demo-player", customerPlayerData, customerVideoData);
+      Point size = new Point();
+      getWindowManager().getDefaultDisplay().getSize(size);
+      muxStats.setScreenSize(size.x, size.y);
+      muxStats.setPlayerView(simpleExoPlayerView.getVideoSurfaceView());
+
       player.addListener(this);
       player.addListener(eventLogger);
-      player.setAudioDebugListener(eventLogger);
-      player.setVideoDebugListener(eventLogger);
+
+      player.setAudioDebugListener(muxStats.getAudioRendererEventListener(eventLogger));
+      player.setVideoDebugListener(muxStats.getVideoRendererEventListener(eventLogger));
       player.setId3Output(eventLogger);
       simpleExoPlayerView.setPlayer(player);
       if (isTimelineStatic) {
@@ -319,15 +339,18 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
     switch (type) {
       case C.TYPE_SS:
         return new SsMediaSource(uri, buildDataSourceFactory(false),
-            new DefaultSsChunkSource.Factory(mediaDataSourceFactory), mainHandler, eventLogger);
+            new DefaultSsChunkSource.Factory(mediaDataSourceFactory), mainHandler,
+                muxStats.getAdaptiveMediaSourceEventListener(eventLogger));
       case C.TYPE_DASH:
         return new DashMediaSource(uri, buildDataSourceFactory(false),
-            new DefaultDashChunkSource.Factory(mediaDataSourceFactory), mainHandler, eventLogger);
+            new DefaultDashChunkSource.Factory(mediaDataSourceFactory), mainHandler,
+                muxStats.getAdaptiveMediaSourceEventListener(eventLogger));
       case C.TYPE_HLS:
-        return new HlsMediaSource(uri, mediaDataSourceFactory, mainHandler, eventLogger);
+        return new HlsMediaSource(uri, mediaDataSourceFactory, mainHandler,
+                muxStats.getAdaptiveMediaSourceEventListener(eventLogger));
       case C.TYPE_OTHER:
         return new ExtractorMediaSource(uri, mediaDataSourceFactory, new DefaultExtractorsFactory(),
-            mainHandler, eventLogger);
+            mainHandler, muxStats.getExtractorMediaSourceEventListener(eventLogger));
       default: {
         throw new IllegalStateException("Unsupported type: " + type);
       }

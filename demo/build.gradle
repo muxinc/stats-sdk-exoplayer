@@ -41,10 +41,12 @@ android {
         noExtensions
         withExtensions
     }
+
 }
 
 dependencies {
     compile project(':library')
+    compile project(':mux')
     withExtensionsCompile project(path: ':extension-ffmpeg')
     withExtensionsCompile project(path: ':extension-flac')
     withExtensionsCompile project(path: ':extension-opus')
