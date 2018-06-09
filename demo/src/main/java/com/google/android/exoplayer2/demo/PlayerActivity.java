@@ -69,7 +69,8 @@ import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.google.android.exoplayer2.util.Util;
 import com.mux.stats.sdk.core.model.CustomerPlayerData;
 import com.mux.stats.sdk.core.model.CustomerVideoData;
-import com.mux.stats.sdk.muxstats.MuxStats;
+import com.mux.stats.sdk.muxstats.MuxStatsExoPlayer;
+
 
 import java.net.CookieHandler;
 import java.net.CookieManager;
@@ -125,7 +126,7 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
   private int playerWindow;
   private long playerPosition;
 
-  private MuxStats muxStats;
+  private MuxStatsExoPlayer muxStats;
 
   // Activity lifecycle
 
@@ -286,7 +287,7 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
       customerPlayerData.setPropertyKey("YOUR_PROPERTY_KEY");
       CustomerVideoData customerVideoData = new CustomerVideoData();
       customerVideoData.setVideoTitle(intent.getStringExtra(VIDEO_TITLE_EXTRA));
-      muxStats = new MuxStats(player, "demo-player", customerPlayerData, customerVideoData);
+      muxStats = new MuxStatsExoPlayer(player, "demo-player", customerPlayerData, customerVideoData);
       Point size = new Point();
       getWindowManager().getDefaultDisplay().getSize(size);
       muxStats.setScreenSize(size.x, size.y);
