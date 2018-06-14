@@ -287,7 +287,7 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
       customerPlayerData.setPropertyKey("YOUR_PROPERTY_KEY");
       CustomerVideoData customerVideoData = new CustomerVideoData();
       customerVideoData.setVideoTitle(intent.getStringExtra(VIDEO_TITLE_EXTRA));
-      muxStats = new MuxStatsExoPlayer(player, "demo-player", customerPlayerData, customerVideoData);
+      muxStats = new MuxStatsExoPlayer(this, player, "demo-player", customerPlayerData, customerVideoData);
       Point size = new Point();
       getWindowManager().getDefaultDisplay().getSize(size);
       muxStats.setScreenSize(size.x, size.y);
