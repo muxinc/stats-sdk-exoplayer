@@ -358,17 +358,17 @@ public class PlayerActivity extends Activity implements OnClickListener, ExoPlay
       case C.TYPE_SS:
         return new SsMediaSource(uri, buildDataSourceFactory(false),
             new DefaultSsChunkSource.Factory(mediaDataSourceFactory), mainHandler,
-                muxStats.getAdaptiveMediaSourceEventListener(eventLogger));
+                muxStats.getAdaptiveMediaSourceEventListener(type, eventLogger));
       case C.TYPE_DASH:
         return new DashMediaSource(uri, buildDataSourceFactory(false),
             new DefaultDashChunkSource.Factory(mediaDataSourceFactory), mainHandler,
-                muxStats.getAdaptiveMediaSourceEventListener(eventLogger));
+                muxStats.getAdaptiveMediaSourceEventListener(type, eventLogger));
       case C.TYPE_HLS:
         return new HlsMediaSource(uri, mediaDataSourceFactory, mainHandler,
-                muxStats.getAdaptiveMediaSourceEventListener(eventLogger));
+                muxStats.getAdaptiveMediaSourceEventListener(type, eventLogger));
       case C.TYPE_OTHER:
         return new ExtractorMediaSource(uri, mediaDataSourceFactory, new DefaultExtractorsFactory(),
-            mainHandler, muxStats.getExtractorMediaSourceEventListener(eventLogger));
+            mainHandler, muxStats.getExtractorMediaSourceEventListener(type, eventLogger));
       default: {
         throw new IllegalStateException("Unsupported type: " + type);
       }
