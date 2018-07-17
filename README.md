@@ -1,5 +1,3 @@
 # stats-sdk-exoplayer
 
-[This commit](https://github.com/muxinc/stats-sdk-exoplayer/commit/e2490383293d4e80c00484a29b195511158c951b) shows how Mux was integrated into the ExoPlayer demo app.
-
-See [our docs](https://docs.mux.com/docs/android-integration-guide) for more information.
+This repo has been deprecated, and is kept around only for access to old release versions. New versions and updates can be found here: https://github.com/muxinc/mux-stats-sdk-exoplayer.
